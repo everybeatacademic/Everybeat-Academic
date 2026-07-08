@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>EveryBeat Academic — Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E7EDEB; --surface:#FFFFFF; --paper:#FBF8F1;
+    --ink:#1E2A33; --ink-soft:#51626E; --muted:#8B9AA3; --line:#D7E0DD;
+    --teal:#2F7E6E; --teal-tint:#DCEEEA;
+    --amber:#C8821E; --amber-tint:#FBEDD6;
+    --coral:#C75A3E; --coral-tint:#FBE5DE;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(30,42,51,.05), 0 10px 30px rgba(30,42,51,.06);
+    --font-display:'Fraunces',serif; --font-body:'Source Serif 4',serif; --font-mono:'IBM Plex Mono',monospace;
+  }
+  [data-theme="dark"]{
+    --bg:#121A20; --surface:#1A242B; --paper:#1E2930;
+    --ink:#E8EEEC; --ink-soft:#AFC0C6; --muted:#7A8E94; --line:#2E3A41;
+    --teal:#5DCAA5; --teal-tint:#1D332E;
+    --amber:#F0B65A; --amber-tint:#3A2C16;
+    --coral:#F0997B; --coral-tint:#3A241C;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+    transition:background .25s ease, color .25s ease;
+  }
+  button{font-family:var(--font-mono); cursor:pointer;}
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:transparent; border:1px solid var(--line); color:var(--ink-soft);
+    border-radius:10px; padding:8px 10px; font-size:12px; line-height:1;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .icon-btn:hover{border-color:var(--ink-soft); color:var(--ink);}
+  .icon-btn.active{background:var(--teal-tint); border-color:var(--teal); color:var(--teal);}
+  .icon-btn svg{width:16px; height:16px; display:block;}
+  .icon-btn .lbl{display:inline;}
+  @media(max-width:640px){ .icon-btn .lbl{display:none;} .icon-btn{padding:9px;} }
+
+  /* ===== Top app bar (library) ===== */
+  .app-head{
+    max-width:920px; margin:0 auto; padding:40px 24px 8px;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:16px;
+  }
+  .wordmark{font-family:var(--font-display); font-weight:600; font-size:34px; letter-spacing:-.01em; margin:0;}
+  .tagline{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; color:var(--muted); margin:6px 0 0; text-transform:uppercase;}
+
+  /* ===== Issue / page tabs ===== */
+  .issue-tabs{
+    max-width:920px; margin:28px auto 0; padding:0 24px;
+    display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; align-items:stretch;
+  }
+  .issue-tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto; font-family:var(--font-mono); font-size:12px; letter-spacing:.04em;
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--tab-color, var(--muted));
+    border-radius:8px 8px 4px 4px; padding:10px 16px; color:var(--ink-soft); white-space:nowrap;
+    transition:all .15s;
+  }
+  .tab.active{color:var(--ink); border-color:var(--tab-color); background:var(--surface); box-shadow:var(--shadow);}
+  .tab-sep{width:1px; align-self:stretch; background:var(--line); margin:0 2px;}
+
+  /* ===== Issue header ===== */
+  .issue-head{max-width:920px; margin:28px auto 0; padding:0 24px;}
+  .issue-head .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--issue-color, var(--teal));}
+  .issue-head h2{font-family:var(--font-display); font-weight:500; font-size:30px; margin:6px 0 8px; letter-spacing:-.01em;}
+  .issue-head p{font-style:italic; color:var(--ink-soft); margin:0; max-width:60ch; line-height:1.6;}
+
+  /* ===== Article grid ===== */
+  .grid{
+    max-width:920px; margin:28px auto 80px; padding:0 24px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:18px;
+  }
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px; cursor:pointer; transition:transform .15s, box-shadow .15s, border-color .15s;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--card-color, var(--teal));}
+  .card .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--card-color, var(--teal));}
+  .card h3{font-family:var(--font-display); font-weight:500; font-size:21px; margin:0; line-height:1.25; letter-spacing:-.005em;}
+  .card .dek{color:var(--ink-soft); font-size:14.5px; line-height:1.55; margin:0; flex:1;}
+  .card .byline{font-family:var(--font-mono); font-size:11px; color:var(--muted); margin:0; padding-top:6px; border-top:1px solid var(--line);}
+
+  /* ===== About page ===== */
+  .page-wrap{max-width:680px; margin:0 auto; padding:36px 20px 80px;}
+  .about-block{margin-top:28px;}
+  .about-block h4{font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 6px;}
+  .about-block a{color:var(--teal); text-decoration:none;}
+  .social-list{display:flex; flex-direction:column;}
+  .social-list a{
+    font-family:var(--font-mono); font-size:13px; color:var(--ink); text-decoration:none;
+    display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .social-list a:last-child{border-bottom:none;}
+  .social-list a svg{width:14px; height:14px; color:var(--muted); transform:rotate(-90deg);}
+
+  /* ===== Reader ===== */
+  .reader-bar{
+    position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 20px; backdrop-filter:blur(6px);
+  }
+  .reader-bar .crumb{font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; text-align:center; flex:1; display:none;}
+  @media(min-width:640px){ .reader-bar .crumb{display:block;} }
+  .reader-bar .group{display:flex; gap:6px; align-items:center;}
+  .lang-switch{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .lang-switch button{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--ink-soft);
+    background:transparent; border:none; padding:8px 10px; border-right:1px solid var(--line);
+  }
+  .lang-switch button:last-child{border-right:none;}
+  .lang-switch button.active{background:var(--teal-tint); color:var(--teal);}
+
+  .reader-main{padding:36px 20px 140px;}
+  .paper{
+    max-width:680px; margin:0 auto; background:var(--paper); border:1px solid var(--line);
+    border-radius:var(--radius); padding:40px clamp(20px,5vw,56px); box-shadow:var(--shadow);
+  }
+  .paper .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--issue-color, var(--teal));}
+  .paper h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5vw,42px); line-height:1.15; margin:10px 0 6px; letter-spacing:-.01em;}
+  .paper .dek{font-style:italic; color:var(--ink-soft); font-size:17px; line-height:1.55; margin:0 0 18px;}
+  .paper .byline{font-family:var(--font-mono); font-size:12px; color:var(--muted); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:12px 0; margin-bottom:28px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;}
+  .article-body{font-size:18px; line-height:1.85;}
+  .article-body.fs-sm{font-size:16px;}
+  .article-body.fs-lg{font-size:21px;}
+  .article-body p{margin:0 0 1.4em;}
+  .hero-block{margin:0 0 28px;}
+  .hero-block .ph-image{aspect-ratio:16/9;}
+  .ph-figure{margin:0 0 1.6em;}
+  .ph-image{
+    width:100%; aspect-ratio:16/10; border-radius:10px; border:1px solid var(--line);
+    background:linear-gradient(135deg, var(--teal-tint), var(--amber-tint));
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    margin-bottom:8px;
+  }
+  .hero-block figcaption, .ph-figure figcaption{font-family:var(--font-mono); font-size:12.5px; color:var(--muted); line-height:1.5; margin:0;}
+
+  /* ===== From the issue spread ===== */
+  .spread-toggle{
+    width:100%; margin-top:8px; font-family:var(--font-mono); font-size:12px; letter-spacing:.04em;
+    background:transparent; border:1px solid var(--line); border-radius:10px; padding:12px 16px; color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:border-color .15s, color .15s;
+  }
+  .spread-toggle:hover{border-color:var(--ink-soft); color:var(--ink);}
+  .spread-toggle svg{width:14px; height:14px; transition:transform .2s ease;}
+  .spread-toggle.open svg{transform:rotate(180deg);}
+  .spread-wrap{max-height:0; overflow:hidden; transition:max-height .35s ease;}
+  .spread-wrap.open{max-height:1400px; margin-top:18px;}
+  .spread{
+    display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--ink);
+    border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+  }
+  @media(max-width:560px){ .spread{grid-template-columns:1fr;} }
+  .spread-page{background:var(--paper); padding:24px 24px 40px; display:flex; flex-direction:column; gap:12px; position:relative;}
+  .spread-page .ph-image{margin-bottom:0;}
+  .spread-pullquote{font-family:var(--font-display); font-style:italic; font-weight:500; font-size:21px; line-height:1.4; margin:0;}
+  .spread-caption{font-family:var(--font-mono); font-size:11.5px; color:var(--muted); line-height:1.5; margin:0;}
+  .spread-page .page-num{position:absolute; bottom:14px; font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; color:var(--muted);}
+  .spread-page:first-child .page-num{left:24px;}
+  .spread-page:last-child .page-num{right:24px;}
+  .spread-foot{text-align:center; font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:14px 0 0;}
+  .sent{transition:background .2s ease; border-radius:3px;}
+  .sent.reading{background:var(--teal-tint); box-shadow:0 0 0 2px var(--teal-tint);}
+  mark.hl{border-radius:3px; padding:0 1px; cursor:pointer;}
+  mark.hl-amber{background:var(--amber-tint); box-shadow:inset 0 -2px 0 var(--amber);}
+  mark.hl-teal{background:var(--teal-tint); box-shadow:inset 0 -2px 0 var(--teal);}
+  mark.hl-coral{background:var(--coral-tint); box-shadow:inset 0 -2px 0 var(--coral);}
+
+  /* ===== Selection toolbar ===== */
+  .sel-toolbar{
+    position:fixed; z-index:50; display:none; gap:4px; padding:6px;
+    background:var(--ink); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    transform:translate(-50%,-100%) translateY(-10px);
+  }
+  [data-theme="dark"] .sel-toolbar{background:var(--surface); border:1px solid var(--line);}
+  .sel-toolbar button{
+    width:32px; height:32px; border:none; border-radius:8px; background:transparent;
+    display:flex; align-items:center; justify-content:center; transition:background .15s;
+  }
+  .sel-toolbar button:hover{background:rgba(255,255,255,.12);}
+  [data-theme="dark"] .sel-toolbar button:hover{background:var(--line);}
+  .sel-toolbar svg{width:16px; height:16px; stroke:var(--paper);}
+  [data-theme="dark"] .sel-toolbar svg{stroke:var(--ink);}
+  .sel-toolbar .dot{width:16px; height:16px; border-radius:50%; display:block;}
+  .sel-toolbar .div{width:1px; background:rgba(255,255,255,.18); margin:4px 2px;}
+  [data-theme="dark"] .sel-toolbar .div{background:var(--line);}
+
+  /* ===== Listen bar ===== */
+  .listen-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:40; background:var(--ink); color:var(--paper);
+    display:none; align-items:center; gap:14px; padding:12px 18px; box-shadow:0 -6px 24px rgba(0,0,0,.2);
+  }
+  [data-theme="dark"] .listen-bar{background:var(--surface); border-top:1px solid var(--line);}
+  .listen-bar.open{display:flex;}
+  .listen-bar button{
+    border:1px solid rgba(255,255,255,.25); background:transparent; color:var(--paper); border-radius:10px;
+    width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  [data-theme="dark"] .listen-bar button{border-color:var(--line); color:var(--ink);}
+  .listen-bar button svg{width:18px; height:18px;}
+  .listen-bar .speed{width:auto; padding:0 10px; font-size:12px;}
+  .listen-bar .now{flex:1; min-width:0; font-size:13px; font-style:italic; font-family:var(--font-display); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.85;}
+  .listen-bar .label{font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; opacity:.6; flex:0 0 auto; display:none;}
+  @media(min-width:640px){.listen-bar .label{display:block;}}
+
+  /* ===== Share modal ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,28,33,.55); z-index:60; display:none;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .quote-card{
+    background:var(--paper); border-radius:var(--radius); padding:36px 32px; max-width:440px; width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.3); position:relative;
+  }
+  .quote-card .mark{font-family:var(--font-display); font-size:52px; line-height:1; color:var(--coral); margin:0 0 4px;}
+  .quote-card blockquote{font-family:var(--font-display); font-style:italic; font-weight:500; font-size:21px; line-height:1.4; margin:0 0 20px;}
+  .quote-card .attr{font-family:var(--font-mono); font-size:11px; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; letter-spacing:.04em;}
+  .quote-card .attr b{color:var(--ink); font-weight:500;}
+  .quote-card .actions{display:flex; gap:10px; margin-top:20px;}
+  .quote-card .actions button{
+    flex:1; font-family:var(--font-mono); font-size:12px; padding:10px; border-radius:10px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .quote-card .actions button.primary{background:var(--teal); border-color:var(--teal); color:var(--paper);}
+  .quote-card .actions svg{width:14px; height:14px;}
+  .quote-card .close{position:absolute; top:14px; right:14px; border:none; background:transparent; color:var(--muted); width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px;}
+  .quote-card .close svg{width:16px; height:16px;}
+  .toast{
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
+    background:var(--ink); color:var(--paper); font-family:var(--font-mono); font-size:12px;
+    padding:10px 18px; border-radius:99px; z-index:70; transition:all .25s ease; pointer-events:none;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  [data-theme="dark"] .toast{background:var(--surface); border:1px solid var(--line); color:var(--ink);}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="sel-toolbar" id="selToolbar"></div>
+<div class="listen-bar" id="listenBar"></div>
+<div class="modal-overlay" id="shareModal"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ Icons ============ */
+const ICON = {
+  back:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
+  sun:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
+  moon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>`,
+  ear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a4 4 0 0 1 4-4 4 4 0 0 1 4 4v3a3 3 0 0 0 3 3"/><path d="M11 4a8 8 0 0 1 8 8c0 3-1 4-1 6a2 2 0 0 1-4 0v-1"/></svg>`,
+  notes:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h9a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8z"/><path d="M9 4v4H5"/><path d="M9 12h6M9 16h6"/></svg>`,
+  play:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>`,
+  pause:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`,
+  stop:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`,
+  x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  minus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`,
+  share:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>`,
+  copy:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>`,
+  chevron:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+};
+
+/* ============ Site & languages ============ */
+const SITE = {
+  tagline:'Kindness · Expertise · Generosity',
+  email:'everybeatacademic@gmail.com',
+  social:[
+    {label:'Bluesky', url:'https://bsky.app/profile/everybeatacademic.bsky.social'},
+    {label:'Instagram', url:'https://www.instagram.com/everybeatacademic'},
+    {label:'Pinterest', url:'https://www.pinterest.com/everybeatacademic'}
+  ]
+};
+const SOURCE_URL = 'https://everybeatacademic.com';
+const LANG_NAMES = { en:'English', es:'Español', fr:'Français' };
+const SPEECH_LANG = { en:'en-US', es:'es-ES', fr:'fr-FR' };
+
+/* ============ Content data ============ */
+const ISSUES = [
+  {
+    id:'2023', label:'2023', color:'#C8821E', title:'Beyond the Battlefield',
+    dek:'Stories of educational resilience — paths into healthcare that didn\u2019t start in a classroom.',
+    articles:[
+      {
+        id:'motor-pool', title:'From the Motor Pool to the Match List',
+        author:'Elena Briggs, MD Candidate — U.S. Army Veteran', readTime:'5 min read',
+        dek:'Six years as a combat medic taught me how to keep someone alive. It taught me almost nothing about organic chemistry.',
+        body:[
+          "I spent six years as a combat medic before I ever opened an MCAT prep book. I had run trauma in the back of a moving vehicle, started IVs in the dark, and made decisions in seconds that most people never have to make in a lifetime. None of that, it turned out, was on the test.",
+          "My first semester back in a classroom was humbling in a way deployment never was. I was twenty-eight, sitting next to eighteen-year-olds who had never stopped studying, and I had forgotten how to take a multiple-choice exam. For a while, I genuinely wondered if I had made a mistake.",
+          "What saved me was finding other people on the same road. A handful of veterans and career-changers in my prerequisite classes formed an informal study group, less for the material and more for the reminder that none of us were behind, we were just on a different timeline. That group became the reason I kept going.",
+          "Eventually I noticed something: the things the military had actually given me, staying calm when a room gets loud, working a problem as part of a team, talking to a frightened person in plain language, were exactly the things my classmates were trying to learn from books. The chemistry caught up. Those other skills did not need to.",
+          "If you are coming to this from a non-traditional path, the gap you feel in the first semester is real, and it closes faster than you think. What you bring with you rarely shows up on a transcript, and it matters more than almost anything that does."
+        ]
+      },
+      {
+        id:'returning-at-forty', title:'Returning to School at Forty',
+        author:'Renata Souza, RN-to-BSN Candidate', readTime:'4 min read',
+        dek:'After fifteen years as a certified nursing assistant, I went back to school. Here\u2019s what nobody tells you about being the oldest person in the room.',
+        body:[
+          "I worked as a CNA for fifteen years before I enrolled in an RN-to-BSN program at forty-one. I had given more bed baths and changed more dressings than most of my new classmates had years on this earth, and somehow I was still nervous walking into that first lecture.",
+          "The technology was the first shock. Submitting an assignment through a learning portal, formatting a citation, joining a video discussion, these were not things fifteen years on a hospital floor had prepared me for, and I felt slower than everyone else for the first few weeks.",
+          "What I had not expected was how much my experience would matter in clinical discussions. When a professor asked the class to talk through a deteriorating patient, I had actually seen that patient, more than once. That kind of pattern recognition does not come from a textbook, and younger classmates started asking me questions instead of the other way around.",
+          "Balancing school with a job, and in my case two teenagers, meant something had to be sacrificed, and most weeks it was sleep. I am not going to pretend that part gets easier. What does get easier is the guilt, once you accept that showing up tired and present is still showing up.",
+          "I am not the oldest person in every room anymore, there are more of us than you would think. If you are doing the math on whether it is too late, it is not. The fifteen years you already have are not a delay. They are the head start nobody told you about."
+        ]
+      }
+    ]
+  },
+  {
+    id:'2024', label:'2024', color:'#C75A3E', title:'The Long Shift',
+    dek:'On endurance, rest, and the small rituals that make a long training sustainable.',
+    articles:[
+      {
+        id:'burnout', title:'Burnout Isn\u2019t a Character Flaw',
+        author:'Dr. Marcus Ofori, PsyD — Student Wellness', readTime:'7 min read',
+        dek:'The exhaustion so many students carry is not a personal failing. It\u2019s a predictable response to a demanding system.',
+        body:[
+          "Somewhere along the way, exhaustion in healthcare training got rebranded as a character issue. If you are tired, the thinking goes, you must not be resilient enough, organized enough, or committed enough. This framing is both common and wrong. Burnout is not what happens to people who care too little. It is what happens to people who have been caring, under pressure, for too long, without enough support.",
+          "The early signs are often easy to miss because they look like productivity. Working later than everyone else. Skipping meals to finish one more task. Feeling slightly numb during moments that used to move you. None of these feel like warning signs in the moment. They feel like discipline, right up until the point where they stop working.",
+          "A lot of what gets labeled an individual problem is actually a structural one. Long shifts, unpredictable schedules, hierarchical cultures that discourage admitting struggle, and training environments that treat exhaustion as a rite of passage all push in the same direction. No amount of personal resilience fully offsets a system that is, in places, genuinely unsustainable.",
+          "Small interventions matter more than they sound like they should. A consistent time to eat. A short walk between tasks. A friend or classmate who will ask how you are doing and actually wait for the answer. None of these fix the system, but they are not meant to. They are meant to keep you steady enough to keep going, and to keep going on terms you can live with.",
+          "If you are further along than tired, if the numbness has settled in, or if you have started to dread work that used to matter to you, that is worth taking seriously and worth talking to someone about. Seeking support during training is not a mark against you. The people who burn out quietly and alone are not the strong ones. They are simply the ones nobody noticed in time."
+        ],
+        translations:{
+          fr:{
+            title:'L\u2019épuisement professionnel n\u2019est pas un défaut de caractère',
+            author:'Dr Marcus Ofori — Bien-être étudiant',
+            dek:'L\u2019épuisement que tant d\u2019étudiants ressentent n\u2019est pas un échec personnel. C\u2019est la réponse prévisible à un système exigeant.',
+            body:[
+              "À un moment donné, l'épuisement dans la formation médicale a été présenté comme un problème de caractère. Si vous êtes fatigué, dit-on, c'est que vous n'êtes pas assez résilient, assez organisé, ou assez engagé. Cette idée est à la fois répandue et fausse. L'épuisement professionnel n'arrive pas à ceux qui se soucient trop peu. Il arrive à ceux qui se sont souciés, sous pression, trop longtemps, sans soutien suffisant.",
+              "Les premiers signes sont souvent difficiles à repérer car ils ressemblent à de la productivité. Travailler plus tard que tout le monde. Sauter des repas pour finir une tâche de plus. Se sentir légèrement absent pendant des moments qui, autrefois, vous touchaient. Rien de tout cela ne ressemble à un signal d'alarme sur le moment. Cela ressemble à de la discipline, jusqu'au moment où cela cesse de fonctionner.",
+              "Une grande partie de ce qu'on qualifie de problème individuel est en réalité structurel. Les longues gardes, les horaires imprévisibles, les cultures hiérarchiques qui dissuadent d'admettre ses difficultés, et les environnements de formation qui traitent l'épuisement comme un rite de passage, vont tous dans la même direction. Aucune résilience personnelle ne compense entièrement un système qui, par endroits, est réellement intenable.",
+              "Les petites interventions comptent plus qu'on ne le pense. Un horaire de repas régulier. Une courte marche entre deux tâches. Un ami ou un camarade qui demande comment vous allez et attend réellement la réponse. Rien de tout cela ne répare le système, et ce n'est pas leur rôle. Elles servent à vous maintenir suffisamment stable pour continuer, et à continuer selon des conditions que vous pouvez tenir.",
+              "Si vous êtes allé au-delà de la simple fatigue, si l'absence s'est installée, ou si vous redoutez désormais un travail qui comptait autrefois pour vous, cela mérite d'être pris au sérieux et d'en parler à quelqu'un. Chercher du soutien pendant la formation n'est pas un signe de faiblesse. Les personnes qui s'épuisent en silence et seules ne sont pas les plus fortes. Elles sont simplement celles que personne n'a remarquées à temps."
+            ]
+          }
+        }
+      },
+      {
+        id:'study-rituals', title:'The Quiet Power of Study Rituals',
+        author:'Tomasz Wieczorek, MD Candidate', readTime:'4 min read',
+        dek:'Why the small, repeated routines around studying matter as much as the studying itself.',
+        body:[
+          "A ritual is not the same thing as a routine. A routine is what you do. A ritual is what tells your brain what is about to happen. The same cup of tea, the same desk, the same five minutes of tidying before you open a textbook, these small repeated acts work less like preparation and more like a signal, training your mind to shift into focus faster each time you repeat them.",
+          "The environment carries more weight than most students give it credit for. A space used only for studying, even if it is just one corner of a desk, becomes associated with concentration over time. A space used for studying, scrolling, and relaxing sends mixed signals, and your brain, not unreasonably, responds to all of them at once.",
+          "Choose a starting task you can do without much thought, and do it the same way every time you sit down. Reviewing yesterday's flashcards, rewriting one diagram, reading the first page of new material slowly. The content of the starting task matters less than its consistency. Its job is to lower the activation energy of beginning, which is often the hardest part of any session.",
+          "An ending ritual matters just as much as a starting one, and gets far less attention. A short note to your future self about where you left off. A single line summarizing what you covered. Closing your books at the same time, even when you are tempted to push on. These small acts of closure protect against the particular exhaustion that comes from study sessions that never quite end, only stop.",
+          "None of this will make difficult material easy. What it can do is make showing up to face that material a little less effortful, session after session, for as long as you need it to. In a long training, that small reduction in friction, repeated daily, adds up to something real."
+        ]
+      }
+    ]
+  },
+  {
+    id:'2025', label:'2025', color:'#2F7E6E', title:'Kindness, Expertise, Generosity',
+    dek:'Notes on the long apprenticeship of becoming a clinician — and the small habits that make it sustainable.',
+    articles:[
+      {
+        id:'first-six-months', title:'The First Six Months: A Field Guide to Clinical Year',
+        author:'Dr. Amara Whitfield, MD — Internal Medicine', readTime:'6 min read',
+        dek:'What nobody tells you about the leap from lecture hall to hospital floor — and how to land on your feet.',
+        hero:{
+          alt:"A medical student reviews a patient's chart at a hospital nurses' station early in the morning, papers and a stethoscope on the desk.",
+          caption:'Pre-rounding, 6:40 a.m. — reviewing overnight labs before the team arrives.'
+        },
+        figures:[
+          {
+            after:1,
+            alt:'A resident and a clinical student stand at a workstation, looking together at an imaging study on screen during rounds.',
+            caption:'Questions asked during rounds become teaching moments — for everyone on the team.'
+          }
+        ],
+        spread:{
+          pages:'14–15',
+          pullQuote:'The disorientation you feel in your first weeks is not a sign that you are unprepared.',
+          left:{
+            alt:"A wide view of a hospital ward hallway at dawn, with a student walking toward the nurses' station in soft morning light.",
+            caption:'The walk to morning rounds, Memorial General — 6:15 a.m.'
+          },
+          right:{
+            alt:'Close-up of a hand writing notes on a clipboard beside a stethoscope and a folded white coat.',
+            caption:'A first patient list, annotated in the margins.'
+          }
+        },
+        body:[
+          "The lecture hall does not prepare you for this. One week you are highlighting a slide about heart failure, and the next you are standing at the bedside of a person whose heart is, in fact, failing. The transition from classroom to clinical year is less a step and more a drop. Almost everyone lands hard. The disorientation you feel in your first weeks is not a sign that you are unprepared. It is the normal cost of doing something genuinely difficult for the first time.",
+          "Build a pre-rounding routine before the team needs you to have one. Arrive early enough to read overnight events, check the latest labs, and look at vitals trends rather than single numbers. Write a short plan for each patient before rounds, even if no one asks for it. This habit does two things at once: it gives you a structure to hang new information on, and it quietly demonstrates that you are tracking the patient as a person, not just a diagnosis.",
+          "Say \"I don't know, but I'll find out\" early and often. Attendings remember the students who chase down an answer far more fondly than the ones who guess confidently and get it wrong. Curiosity reads as competence in a way that bluffing never does. The fastest way to lose a team's trust is to pretend certainty you do not have, and the fastest way to earn it is to be reliably honest about the edges of your knowledge.",
+          "Protect two things on purpose: sleep and food. Clinical year has a way of making both feel optional, and both have a way of making everything else harder when they are skipped. Keep something to eat within reach, even if it is unglamorous. Treat your sleep like a clinical variable you are responsible for managing, because in a very real sense, it is one.",
+          "Six months from now, the floor will not feel like enemy territory anymore. The pagers, the workflows, the unfamiliar shorthand on the chart, all of it becomes ordinary faster than you expect. What stays with you is the patients who let you practice being the kind of clinician you are still becoming. Be grateful for them, and be gentle with the version of yourself who is just starting out."
+        ],
+        translations:{
+          es:{
+            title:'Los primeros seis meses: una guía de campo para el año clínico',
+            author:'Dra. Amara Whitfield — Medicina Interna',
+            dek:'Lo que nadie te dice sobre el salto del aula al hospital, y cómo aterrizar de pie.',
+            hero:{
+              alt:'Una estudiante de medicina revisa el expediente de un paciente en la estación de enfermería temprano por la mañana, con papeles y un estetoscopio sobre el escritorio.',
+              caption:'Pre-ronda, 6:40 a.m. — revisando los laboratorios de la noche antes de que llegue el equipo.'
+            },
+            figures:[
+              {
+                alt:'Un residente y una estudiante clínica observan juntos un estudio de imagen en la pantalla durante la ronda.',
+                caption:'Las preguntas que se hacen durante la ronda se convierten en momentos de enseñanza para todo el equipo.'
+              }
+            ],
+            spread:{
+              pullQuote:'La desorientación que sientes en tus primeras semanas no significa que no estés preparado.',
+              left:{
+                alt:"Una vista amplia del pasillo de una sala de hospital al amanecer, con una estudiante caminando hacia la estación de enfermería bajo una luz suave de la mañana.",
+                caption:'El camino hacia la ronda matutina, Memorial General — 6:15 a.m.'
+              },
+              right:{
+                alt:'Primer plano de una mano escribiendo notas en una tabla sujetapapeles junto a un estetoscopio y una bata blanca doblada.',
+                caption:'Una primera lista de pacientes, anotada en los márgenes.'
+              }
+            },
+            body:[
+              "El aula no te prepara para esto. Una semana estás repasando una diapositiva sobre insuficiencia cardíaca, y a la siguiente estás junto a la cama de una persona cuyo corazón, de hecho, está fallando. La transición del aula al año clínico no es un escalón, sino una caída. Casi todos aterrizan con fuerza. La desorientación que sientes en tus primeras semanas no significa que no estés preparado. Es el costo normal de hacer algo genuinamente difícil por primera vez.",
+              "Construye una rutina de prerronda antes de que el equipo necesite que la tengas. Llega con suficiente tiempo para leer los eventos de la noche, revisar los últimos laboratorios y observar las tendencias de los signos vitales, no solo los números aislados. Escribe un breve plan para cada paciente antes de la ronda, aunque nadie te lo pida. Este hábito hace dos cosas a la vez: te da una estructura donde colocar la información nueva, y demuestra discretamente que estás siguiendo al paciente como persona, no solo como diagnóstico.",
+              "Di \"no lo sé, pero lo voy a averiguar\" desde el principio y con frecuencia. Los médicos adjuntos recuerdan con más cariño a los estudiantes que investigan una respuesta que a los que adivinan con confianza y se equivocan. La curiosidad transmite competencia de una forma que el fingir nunca logra. La manera más rápida de perder la confianza de un equipo es aparentar una certeza que no tienes, y la manera más rápida de ganarla es ser honesto de forma constante sobre los límites de tu conocimiento.",
+              "Protege dos cosas a propósito: el sueño y la comida. El año clínico tiende a hacer que ambos parezcan opcionales, y ambos tienden a hacer que todo lo demás sea más difícil cuando se omiten. Mantén algo para comer a tu alcance, aunque no sea elegante. Trata tu sueño como una variable clínica de la que eres responsable, porque en un sentido muy real, lo es.",
+              "Dentro de seis meses, el piso ya no se sentirá como territorio hostil. Los buscapersonas, los flujos de trabajo, la jerga desconocida en el expediente, todo eso se vuelve cotidiano más rápido de lo que esperas. Lo que permanece son los pacientes que te permitieron practicar siendo el tipo de clínico en el que todavía te estás convirtiendo. Sé agradecido con ellos, y sé compasivo con la versión de ti mismo que recién está comenzando."
+            ]
+          }
+        }
+      },
+      {
+        id:'note-systems', title:'Note Systems That Outlive the Exam',
+        author:'Priya Nandakumar, RN, MSN — Nurse Educator', readTime:'5 min read',
+        dek:'A practical look at note-taking methods built for retention, not just for surviving Friday\u2019s test.',
+        body:[
+          "Most students design their notes around a single deadline: the next exam. But the notes that actually serve you later, on the wards, in a job interview, in a moment of genuine clinical doubt, are built differently. They are organized around questions you might ask again, not facts you need to recall once. Designing for that second use changes almost everything about how you take notes in the first place.",
+          "The Cornell method earns its reputation honestly. A narrow column for cues and questions, a wide column for the lecture content, and a summary strip at the bottom turn a single page into three different study tools. The cue column becomes a self-quiz. The summary strip becomes a one-line abstract you can scan in seconds, months later, when you need the gist and nothing more.",
+          "For pathophysiology and pharmacology, concept maps often beat linear notes outright. Drawing the relationships between a disease process, its mechanism, its presentation, and its treatment forces you to understand the chain rather than memorize its links separately. When a map has a gap, that gap is exactly the thing you do not yet understand, which makes concept maps a strangely honest diagnostic tool for your own knowledge.",
+          "Spaced repetition is not a study hack, it is a scheduling decision. The content matters less than the timing: reviewing material at increasing intervals is what moves it from short-term cramming into something closer to a durable clinical instinct. Flashcard software automates the scheduling so you do not have to think about it, which is precisely the point.",
+          "There is no single right format. Paper notes are easier to sketch on and harder to lose to a sync error. Digital notes are searchable and easy to share with a study group. Most experienced students end up with a hybrid: paper or a tablet for first-pass notes during lecture, and a digital system for the long-term archive, the flashcards, and the concept maps that get revisited for years."
+        ]
+      }
+    ]
+  }
+];
+
+/* ============ Editor's Letter ============ */
+const EDITOR_ISSUE = {
+  id:'editor', label:'Editor\u2019s Letter', color:'#51626E', title:'From the Editor',
+  dek:'Notes, updates, and miscellany from the EveryBeat editorial team — alongside the issues, not inside them.',
+  articles:[
+    {
+      id:'why-digital', title:'Why We Built a Digital Edition',
+      author:'The Editors', readTime:'Spring 2025', eyebrowLabel:'Editor\u2019s letter',
+      dek:'A short note on what changes, and what doesn\u2019t, when a print magazine becomes a reading experience.',
+      body:[
+        "Every issue of EveryBeat Academic starts as a print object, designed for a physical page. This year, for the first time, each issue is also available as a digital reading experience, built around the article rather than the page.",
+        "We thought carefully about what to carry over and what to leave behind. The print spreads are preserved as an optional \"from the issue\" section at the end of each article, for anyone who wants to see how a piece looked on paper. The reading view itself is built for screens, with adjustable text size, a dark mode for night reading, and a read-aloud option for commutes and breaks between rotations.",
+        "We also wanted sharing to feel native to how people actually share things now: select a passage, and a quote card with full attribution is ready to send anywhere in a couple of taps. No accounts, no logins, nothing to set up.",
+        "This is a first version, and it will keep changing. If something about it doesn't work for you, or works particularly well, we would like to hear about it."
+      ]
+    },
+    {
+      id:'submissions', title:'A Note on Submissions',
+      author:'The Editors', readTime:'Spring 2025', eyebrowLabel:'Editor\u2019s letter',
+      dek:'We\u2019re looking for student and resident writers for upcoming issues — here\u2019s what we\u2019re after.',
+      body:[
+        "Each issue of EveryBeat Academic is written largely by the people it's for: students, residents, and the educators working alongside them. We're always reading submissions for future issues.",
+        "We're particularly interested in pieces grounded in a specific experience rather than general advice, something you noticed during a rotation, a habit that changed how you study, a moment that shifted how you think about the work.",
+        "Pieces typically run four to seven minutes to read. If you have something in mind, even in rough form, write to us, we're happy to work with you on shaping it."
+      ]
+    }
+  ]
+};
+
+/* ============ State ============ */
+const state = {
+  view:'library', page:'issue', issueId:'2025', articleId:null,
+  fontSize:'md', theme:'light', lang:'en',
+};
+
+function getAvailableLangs(article){ return ['en', ...Object.keys(article.translations||{})]; }
+function getArticleContent(article){
+  const base = { title:article.title, dek:article.dek, author:article.author, readTime:article.readTime, eyebrowLabel:article.eyebrowLabel||'Article', body:article.body, hero:article.hero, figures:article.figures||[], spread:article.spread };
+  if(state.lang!=='en' && article.translations && article.translations[state.lang]){
+    const t=article.translations[state.lang];
+    return Object.assign({}, base, {
+      title:t.title, dek:t.dek, author:t.author||article.author, body:t.body,
+      hero: t.hero ? Object.assign({}, article.hero, t.hero) : article.hero,
+      figures: (article.figures||[]).map((f,i)=> t.figures && t.figures[i] ? Object.assign({}, f, t.figures[i]) : f),
+      spread: t.spread && article.spread ? Object.assign({}, article.spread, t.spread, {
+        left: Object.assign({}, article.spread.left, t.spread.left),
+        right: Object.assign({}, article.spread.right, t.spread.right)
+      }) : article.spread
+    });
+  }
+  return base;
+}
+
+/* ============ Helpers ============ */
+function findIssue(id){ return ISSUES.find(i=>i.id===id) || (id===EDITOR_ISSUE.id ? EDITOR_ISSUE : null); }
+function findArticle(issue, id){ return issue.articles.find(a=>a.id===id); }
+function splitSentences(text){
+  const parts = text.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g);
+  return parts ? parts.map(s=>s.trim()).filter(Boolean) : [text];
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ============ Shared nav ============ */
+function navHTML(){
+  const issueTabs = ISSUES.map(i=>`<button class="tab ${state.page==='issue'&&state.issueId===i.id?'active':''}" style="--tab-color:${i.color}" data-issue="${i.id}">${i.label}</button>`).join('');
+  return `
+    <div class="app-head">
+      <div>
+        <p class="wordmark">EveryBeat <span style="font-style:italic; color:var(--ink-soft); font-weight:300;">Academic</span></p>
+        <p class="tagline">${SITE.tagline}</p>
+      </div>
+      <button class="icon-btn" id="themeBtn">${ICON[state.theme==='light'?'moon':'sun']}<span class="lbl">${state.theme==='light'?'Dark':'Light'}</span></button>
+    </div>
+    <div class="issue-tabs">
+      ${issueTabs}
+      <span class="tab-sep" aria-hidden="true"></span>
+      <button class="tab ${state.page==='editor'?'active':''}" data-page="editor">Editor\u2019s Letter</button>
+      <button class="tab ${state.page==='about'?'active':''}" data-page="about">About Us</button>
+    </div>
+  `;
+}
+function bindNav(app){
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  app.querySelectorAll('.tab[data-issue]').forEach(b=>b.addEventListener('click',()=>{
+    state.page='issue'; state.issueId=b.dataset.issue; renderLibrary();
+  }));
+  app.querySelectorAll('.tab[data-page]').forEach(b=>b.addEventListener('click',()=>{
+    if(b.dataset.page==='editor') renderEditorList(); else renderAbout();
+  }));
+}
+
+/* ============ Rendering: Library ============ */
+function renderLibrary(){
+  Speech.stop();
+  state.view='library'; state.page='issue'; state.articleId=null;
+  document.getElementById('listenBar').classList.remove('open');
+  const issue = findIssue(state.issueId);
+  const app = document.getElementById('app');
+  app.innerHTML = navHTML() + `
+    <div class="issue-head" style="--issue-color:${issue.color}">
+      <p class="eyebrow">${issue.label}</p>
+      <h2>${issue.title}</h2>
+      <p>${issue.dek}</p>
+    </div>
+    <div class="grid">
+      ${issue.articles.map(a=>`
+        <div class="card" style="--card-color:${issue.color}" data-article="${a.id}">
+          <p class="eyebrow">Article · ${a.readTime}</p>
+          <h3>${a.title}</h3>
+          <p class="dek">${a.dek}</p>
+          <p class="byline">${a.author}${getAvailableLangs(a).length>1 ? ` · Available in ${getAvailableLangs(a).map(l=>LANG_NAMES[l]).join(', ')}` : ''}</p>
+        </div>`).join('')}
+    </div>
+  `;
+  bindNav(app);
+  app.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{ state.articleId=c.dataset.article; state.lang='en'; renderReader(); }));
+}
+
+/* ============ Rendering: Editor's Letter list ============ */
+function renderEditorList(){
+  Speech.stop();
+  state.view='library'; state.page='editor'; state.articleId=null;
+  document.getElementById('listenBar').classList.remove('open');
+  const app = document.getElementById('app');
+  app.innerHTML = navHTML() + `
+    <div class="issue-head" style="--issue-color:${EDITOR_ISSUE.color}">
+      <p class="eyebrow">${EDITOR_ISSUE.label}</p>
+      <h2>${EDITOR_ISSUE.title}</h2>
+      <p>${EDITOR_ISSUE.dek}</p>
+    </div>
+    <div class="grid">
+      ${EDITOR_ISSUE.articles.map(a=>`
+        <div class="card" style="--card-color:${EDITOR_ISSUE.color}" data-article="${a.id}">
+          <p class="eyebrow">${a.eyebrowLabel} · ${a.readTime}</p>
+          <h3>${a.title}</h3>
+          <p class="dek">${a.dek}</p>
+          <p class="byline">${a.author}</p>
+        </div>`).join('')}
+    </div>
+  `;
+  bindNav(app);
+  app.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{
+    state.issueId='editor'; state.articleId=c.dataset.article; state.lang='en'; renderReader();
+  }));
+}
+
+/* ============ Rendering: About Us ============ */
+function renderAbout(){
+  Speech.stop();
+  state.view='library'; state.page='about'; state.articleId=null;
+  document.getElementById('listenBar').classList.remove('open');
+  const app = document.getElementById('app');
+  app.innerHTML = navHTML() + `
+    <div class="page-wrap">
+      <article class="paper">
+        <p class="eyebrow" style="color:var(--muted)">About</p>
+        <h1>About EveryBeat Academic</h1>
+        <div class="article-body" style="font-size:17px;">
+          <p>The journey toward becoming a healthcare professional is unlike most others. It asks a great deal of the mind, the body, and the parts of a person that don\u2019t show up on a transcript. EveryBeat Academic exists to support that journey.</p>
+          <p>Each issue is built around three things: generosity in sharing what we\u2019ve learned, kindness toward the people still learning it, and the kind of expertise that comes from people who are still close enough to the work to remember what it felt like not to know something yet.</p>
+          <p>EveryBeat Academic is produced by Everybeat, LLC.</p>
+        </div>
+        <div class="about-block">
+          <h4>Get in touch</h4>
+          <p style="margin:0;"><a href="mailto:${SITE.email}">${SITE.email}</a></p>
+        </div>
+        <div class="about-block">
+          <h4>Follow along</h4>
+          <div class="social-list">
+            ${SITE.social.map(s=>`<a href="${s.url}" target="_blank" rel="noopener">${s.label}${ICON.chevron}</a>`).join('')}
+          </div>
+        </div>
+      </article>
+    </div>
+  `;
+  bindNav(app);
+}
+
+/* ============ Rendering: Reader ============ */
+function renderReader(){
+  state.view='reader';
+  const issue = findIssue(state.issueId);
+  const article = findArticle(issue, state.articleId);
+  const content = getArticleContent(article);
+  const langs = getAvailableLangs(article);
+  document.documentElement.lang = state.lang;
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="reader-bar">
+      <button class="icon-btn" id="backBtn">${ICON.back}<span class="lbl">Library</span></button>
+      <p class="crumb">EveryBeat · ${issue.label}</p>
+      <div class="group">
+        ${langs.length>1 ? `<div class="lang-switch">${langs.map(l=>`<button class="${l===state.lang?'active':''}" data-lang="${l}" title="${LANG_NAMES[l]}">${l.toUpperCase()}</button>`).join('')}</div>` : ''}
+        <button class="icon-btn" id="fsMinus" title="Smaller text">${ICON.minus}</button>
+        <button class="icon-btn" id="fsPlus" title="Larger text">${ICON.plus}</button>
+        <button class="icon-btn" id="themeBtn">${ICON[state.theme==='light'?'moon':'sun']}</button>
+        <button class="icon-btn ${Speech.playing?'active':''}" id="listenBtn">${ICON.ear}<span class="lbl">Listen</span></button>
+        <button class="icon-btn" id="editorBtn">${ICON.notes}<span class="lbl">From the Editor</span></button>
+      </div>
+    </div>
+    <div class="reader-main">
+      <article class="paper" style="--issue-color:${issue.color}">
+        <p class="eyebrow">${content.eyebrowLabel} · ${content.readTime}${state.lang!=='en' ? ' · '+LANG_NAMES[state.lang] : ''}</p>
+        <h1>${content.title}</h1>
+        <p class="dek">${content.dek}</p>
+        <div class="byline"><span>${content.author}</span><span>${issue.label} — ${issue.title}</span></div>
+        ${content.hero ? `<figure class="hero-block"><div class="ph-image" role="img" aria-label="${content.hero.alt}"><span>Photograph</span></div><figcaption>${content.hero.caption}</figcaption></figure>` : ''}
+        <div class="article-body fs-${state.fontSize}" id="articleBody">
+          ${content.body.map((para,pIdx)=>{
+            let html = `<p>${splitSentences(para).map((s,sIdx)=>`<span class="sent" data-id="${pIdx}-${sIdx}">${s} </span>`).join('')}</p>`;
+            const fig = content.figures.find(f=>f.after===pIdx);
+            if(fig) html += `<figure class="ph-figure"><div class="ph-image" role="img" aria-label="${fig.alt}"><span>Photograph</span></div><figcaption>${fig.caption}</figcaption></figure>`;
+            return html;
+          }).join('')}
+        </div>
+        ${content.spread ? `
+        <button class="spread-toggle" id="spreadToggle" aria-expanded="false">
+          ${ICON.chevron} From the issue — pp. ${content.spread.pages}
+        </button>
+        <div class="spread-wrap" id="spreadWrap">
+          <div class="spread">
+            <div class="spread-page">
+              <div class="ph-image" role="img" aria-label="${content.spread.left.alt}"><span>Photograph</span></div>
+              <p class="spread-caption">${content.spread.left.caption}</p>
+              <span class="page-num">${content.spread.pages.split(/[–-]/)[0]}</span>
+            </div>
+            <div class="spread-page">
+              <p class="spread-pullquote">"${content.spread.pullQuote}"</p>
+              <div class="ph-image" role="img" aria-label="${content.spread.right.alt}"><span>Photograph</span></div>
+              <p class="spread-caption">${content.spread.right.caption}</p>
+              <span class="page-num">${content.spread.pages.split(/[–-]/)[1]||''}</span>
+            </div>
+          </div>
+          <p class="spread-foot">EveryBeat Academic — ${issue.label}, in print</p>
+        </div>` : ''}
+      </article>
+    </div>
+  `;
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    if(state.issueId==='editor') renderEditorList(); else renderLibrary();
+  });
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  document.getElementById('fsMinus').addEventListener('click', ()=>setFontSize(-1));
+  document.getElementById('fsPlus').addEventListener('click', ()=>setFontSize(1));
+  document.getElementById('listenBtn').addEventListener('click', Speech.toggle);
+  document.getElementById('editorBtn').addEventListener('click', renderEditorList);
+  app.querySelectorAll('.lang-switch button').forEach(b=>b.addEventListener('click',()=>{
+    if(b.dataset.lang===state.lang) return;
+    state.lang=b.dataset.lang; renderReader();
+  }));
+  const spreadToggle=document.getElementById('spreadToggle');
+  if(spreadToggle){
+    spreadToggle.addEventListener('click', ()=>{
+      const wrap=document.getElementById('spreadWrap');
+      const open=wrap.classList.toggle('open');
+      spreadToggle.setAttribute('aria-expanded', open);
+      spreadToggle.classList.toggle('open', open);
+    });
+  }
+  Speech.refresh();
+}
+
+function setFontSize(dir){
+  const order=['sm','md','lg'];
+  let idx=order.indexOf(state.fontSize)+dir;
+  idx=Math.max(0,Math.min(order.length-1,idx));
+  state.fontSize=order[idx];
+  const el=document.getElementById('articleBody');
+  if(el){ el.classList.remove('fs-sm','fs-md','fs-lg'); el.classList.add('fs-'+state.fontSize); }
+}
+
+function toggleTheme(){
+  state.theme = state.theme==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  if(state.view==='reader') renderReader();
+  else if(state.page==='editor') renderEditorList();
+  else if(state.page==='about') renderAbout();
+  else renderLibrary();
+}
+
+/* ============ Selection toolbar ============ */
+const toolbar=document.getElementById('selToolbar');
+function buildToolbar(){
+  toolbar.innerHTML = `
+    <button data-c="amber" title="Highlight amber"><span class="dot" style="background:var(--amber)"></span></button>
+    <button data-c="teal" title="Highlight teal"><span class="dot" style="background:var(--teal)"></span></button>
+    <button data-c="coral" title="Highlight coral"><span class="dot" style="background:var(--coral)"></span></button>
+    <div class="div"></div>
+    <button data-action="share" title="Share this quote">${ICON.share}</button>
+  `;
+  toolbar.querySelectorAll('button[data-c]').forEach(b=>b.addEventListener('click',()=>highlightSelection(b.dataset.c)));
+  toolbar.querySelector('[data-action="share"]').addEventListener('click',()=>{
+    const sel=window.getSelection(); const text=sel.toString().trim();
+    if(!text) return;
+    highlightSelection('coral');
+    openShareModal(text);
+  });
+}
+buildToolbar();
+
+function hideToolbar(){ toolbar.style.display='none'; }
+document.addEventListener('selectionchange', ()=>{
+  if(state.view!=='reader') return;
+  const sel=window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.toString().trim()){ hideToolbar(); return; }
+  const range=sel.getRangeAt(0);
+  const body=document.getElementById('articleBody');
+  if(!body || !body.contains(range.commonAncestorContainer)){ hideToolbar(); return; }
+  const rect=range.getBoundingClientRect();
+  if(!rect.width && !rect.height){ hideToolbar(); return; }
+  toolbar.style.display='flex';
+  toolbar.style.left = Math.min(Math.max(rect.left+rect.width/2, 90), window.innerWidth-90)+'px';
+  toolbar.style.top = Math.max(rect.top,46)+'px';
+});
+
+function highlightSelection(color){
+  const sel=window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.toString().trim()) return;
+  const range=sel.getRangeAt(0);
+  try{
+    const mark=document.createElement('mark');
+    mark.className='hl hl-'+color;
+    range.surroundContents(mark);
+  }catch(e){ /* selection spans multiple elements — highlight skipped, sharing still works */ }
+  sel.removeAllRanges();
+  hideToolbar();
+}
+
+/* ============ Share modal ============ */
+function openShareModal(text){
+  const issue=findIssue(state.issueId);
+  const article=findArticle(issue, state.articleId);
+  const content=getArticleContent(article);
+  const url=`${SOURCE_URL}/${issue.id}/${article.id}${state.lang!=='en' ? '?lang='+state.lang : ''}`;
+  const citation=`${content.author} — ${content.title}, EveryBeat Academic ${issue.label}`;
+  const modal=document.getElementById('shareModal');
+  modal.innerHTML = `
+    <div class="quote-card">
+      <button class="close" id="closeShare">${ICON.x}</button>
+      <p class="mark">"</p>
+      <blockquote>${text}</blockquote>
+      <p class="attr"><b>${content.title}</b><br>${citation}<br><span style="color:var(--teal)">${url}</span></p>
+      <div class="actions">
+        <button id="copyQuote">${ICON.copy} Copy text</button>
+        <button id="shareQuote" class="primary">${ICON.share} Share</button>
+      </div>
+    </div>
+  `;
+  modal.classList.add('open');
+  document.getElementById('closeShare').addEventListener('click',()=>modal.classList.remove('open'));
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.classList.remove('open'); });
+  document.getElementById('copyQuote').addEventListener('click', ()=>{
+    const full=`"${text}"\n— ${citation}\n${url}`;
+    navigator.clipboard?.writeText(full).then(()=>showToast('Quote copied, with source'));
+  });
+  document.getElementById('shareQuote').addEventListener('click', ()=>{
+    const full=`"${text}" — ${citation}`;
+    if(navigator.share){ navigator.share({title:content.title, text:full, url}).catch(()=>{}); }
+    else { navigator.clipboard?.writeText(`${full}\n${url}`).then(()=>showToast('Quote copied, with source — paste anywhere')); }
+  });
+}
+
+/* ============ Read-aloud ============ */
+const Speech = {
+  list:[], idx:0, playing:false, paused:false, rate:1,
+  rates:[1,1.25,1.5,0.85],
+  refresh(){
+    this.stop();
+    this.list = Array.from(document.querySelectorAll('#articleBody .sent'));
+  },
+  render(){
+    const bar=document.getElementById('listenBar');
+    if(!this.playing && !this.paused){ bar.classList.remove('open'); return; }
+    bar.classList.add('open');
+    const current = this.list[this.idx];
+    bar.innerHTML = `
+      <button id="spStop" title="Stop">${ICON.stop}</button>
+      <button id="spPlay" title="${this.paused?'Resume':'Pause'}">${this.paused?ICON.play:ICON.pause}</button>
+      <span class="label">Listening</span>
+      <span class="now">${current ? current.textContent.trim() : ''}</span>
+      <button class="speed" id="spRate">${this.rate}×</button>
+    `;
+    document.getElementById('spStop').addEventListener('click', ()=>this.stop());
+    document.getElementById('spPlay').addEventListener('click', ()=>this.toggle());
+    document.getElementById('spRate').addEventListener('click', ()=>this.cycleRate());
+  },
+  toggle(){
+    if(!this.playing && !this.paused){ this.start(); return; }
+    if(this.paused){ this.paused=false; speechSynthesis.resume(); }
+    else { this.paused=true; speechSynthesis.pause(); }
+    this.render();
+    const btn=document.getElementById('listenBtn'); if(btn) btn.classList.toggle('active', this.playing);
+  },
+  start(){
+    if(!this.list.length) this.refresh();
+    if(!this.list.length) return;
+    this.playing=true; this.paused=false; this.idx=0;
+    this.render();
+    const btn=document.getElementById('listenBtn'); if(btn) btn.classList.add('active');
+    this.speakNext();
+  },
+  speakNext(){
+    if(!this.playing) return;
+    this.list.forEach(el=>el.classList.remove('reading'));
+    if(this.idx>=this.list.length){ this.stop(); return; }
+    const el=this.list[this.idx];
+    el.classList.add('reading');
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    this.render();
+    const utter=new SpeechSynthesisUtterance(el.textContent.trim());
+    utter.rate=this.rate;
+    utter.lang=SPEECH_LANG[state.lang]||'en-US';
+    utter.onend=()=>{ if(!this.playing) return; this.idx++; this.speakNext(); };
+    utter.onerror=()=>{ if(!this.playing) return; this.idx++; this.speakNext(); };
+    speechSynthesis.speak(utter);
+  },
+  cycleRate(){
+    const i=this.rates.indexOf(this.rate);
+    this.rate=this.rates[(i+1)%this.rates.length];
+    this.render();
+  },
+  stop(){
+    this.playing=false; this.paused=false;
+    speechSynthesis.cancel();
+    this.list.forEach(el=>el.classList.remove('reading'));
+    const bar=document.getElementById('listenBar'); if(bar){ bar.classList.remove('open'); bar.innerHTML=''; }
+    const btn=document.getElementById('listenBtn'); if(btn) btn.classList.remove('active');
+  }
+};
+
+/* ============ Boot ============ */
+renderLibrary();
+</script>
+</body>
+</html>
